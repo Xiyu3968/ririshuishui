@@ -1,0 +1,16 @@
+{
+  "name": "日日澆水",
+  "short_name": "日日澆水",
+  "description": "每天為自己澆一次水的打卡養成小程式",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ECF2EF",
+  "theme_color": "#1B7F6B",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

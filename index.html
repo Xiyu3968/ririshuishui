@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ECF2EF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1A17" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="日日澆水">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>日日澆水</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@400;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+/* 版面：單欄手機優先。頂部固定等級與資源列，底部四分頁導覽（今日／商城／圖鑑／我）。
+   色彩取雨後森林的青綠當主色，火焰橘只給連勝與斷火警示，金色只給 Coin 與傳說稀有度。 */
+:root{
+  --bg:#ECF2EF; --surface:#FFFFFF; --surface2:#E1EAE6; --ink:#15302A; --muted:#587068; --line:#C9D7D1;
+  --accent:#1B7F6B; --accent-deep:#12604F; --accent-ink:#FFFFFF;
+  --flame:#E4572E; --water:#2B78B4; --gold:#A8710F; --danger:#BE3A2C;
+  --font-display:'LXGW WenKai TC','Kaiti TC','STKaiti','DFKai-SB',serif;
+  --font-body:'Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1A17; --surface:#16261F; --surface2:#1D332C; --ink:#E5F0EB; --muted:#93AAA1; --line:#2A463E;
+    --accent:#46C3A5; --accent-deep:#2A8F79; --accent-ink:#06211A;
+    --flame:#FF7A4D; --water:#66B4EE; --gold:#E2B04C; --danger:#FF7E6E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1A17; --surface:#16261F; --surface2:#1D332C; --ink:#E5F0EB; --muted:#93AAA1; --line:#2A463E;
+  --accent:#46C3A5; --accent-deep:#2A8F79; --accent-ink:#06211A;
+  --flame:#FF7A4D; --water:#66B4EE; --gold:#E2B04C; --danger:#FF7E6E;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 var(--font-body);padding-inline:16px;padding-block:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{cursor:not-allowed}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.wrap{max-width:520px;margin:0 auto;min-width:0}
+.i{width:1.15em;height:1.15em;flex:none;vertical-align:-.2em}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* 頂部列 */
+.hd{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px}
+.hd-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.lvpill{display:flex;align-items:center;gap:8px;background:none;border:0;padding:2px 0;font-weight:700;font-size:15px}
+.lvpill span{font:700 19px var(--font-display)}
+.chips{display:flex;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--line);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+.chip.coin .i{color:var(--gold)}
+.chip.sh .i{color:var(--water)}
+/* 等級徽章：五個階段，框色與底色隨階段升級 */
+.lvb{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;flex:none;border:2px solid currentColor;position:relative}
+.lvb .i{width:58%;height:58%}
+.lvb.t1{color:var(--muted);background:var(--surface2)}
+.lvb.t2{color:var(--water);background:var(--surface2)}
+.lvb.t3{color:var(--accent-ink);background:var(--accent);border-color:var(--accent-deep)}
+.lvb.t4{color:var(--surface);background:var(--gold);border-color:var(--gold)}
+.lvb.t5{color:var(--surface);background:var(--flame);border-color:var(--flame);box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--gold)}
+.lvb.md{width:46px;height:46px}
+.lvb.lg{width:92px;height:92px;border-width:4px}
+.lvb.lg.t5{box-shadow:0 0 0 5px var(--surface),0 0 0 8px var(--gold)}
+.burst{position:relative;display:grid;place-items:center;width:170px;height:150px}
+.burst::before{content:'';position:absolute;width:170px;height:170px;border-radius:50%;background:repeating-conic-gradient(var(--gold) 0 7deg,transparent 7deg 22deg);opacity:.4;-webkit-mask:radial-gradient(circle,transparent 34%,#000 36%,transparent 72%);mask:radial-gradient(circle,transparent 34%,#000 36%,transparent 72%);animation:spin 14s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.burst .lvb{animation:pop .6s ease}
+.mehero{display:flex;align-items:center;gap:18px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 16px}
+.mehero h2{font-size:24px}
+.xp{height:8px;border-radius:99px;background:var(--surface2);overflow:hidden;margin-top:8px}
+.xp i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .5s ease}
+.xp-l{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+
+main{display:flex;flex-direction:column;gap:18px;padding-block:8px 110px}
+h2{font:700 20px/1.3 var(--font-display);margin:0;text-wrap:balance}
+h3{font:700 18px/1.3 var(--font-display);margin:0}
+.sub{color:var(--muted);font-size:13px;margin:0}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.sec-h .sub{font-variant-numeric:tabular-nums}
+
+/* 英雄區 */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 16px 26px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.streak{display:flex;align-items:center;gap:10px}
+.streak .flame{width:52px;height:52px;color:var(--flame)}
+.streak.cold .flame{color:var(--line)}
+.streak b{font:700 92px/1 var(--font-display);font-variant-numeric:tabular-nums}
+.streak span{font:700 18px var(--font-display);align-self:flex-end;padding-bottom:12px}
+.pop b{animation:pop .5s ease}
+@keyframes pop{0%{transform:scale(.7)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;width:100%;max-width:340px}
+.wd{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+.wd .dot{width:100%;max-width:34px;aspect-ratio:1;border-radius:50%;background:var(--surface2);display:grid;place-items:center}
+.wd .dot .i{width:60%;height:60%}
+.wd.c .dot{background:var(--accent);color:var(--accent-ink)}
+.wd.s .dot{background:var(--water);color:#fff}
+.wd.p .dot{background:var(--gold);color:var(--surface);font:700 13px var(--font-display)}
+.wd.t .dot{outline:2px solid var(--accent);outline-offset:2px}
+.wd.t{color:var(--ink);font-weight:700}
+.drop{width:180px;height:180px;border-radius:50%;border:0;background:var(--accent);color:var(--accent-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font:700 22px var(--font-display);box-shadow:0 9px 0 var(--accent-deep);transition:transform .08s,box-shadow .08s;margin-top:4px}
+.drop .i{width:52px;height:52px}
+.drop small{font:500 12px var(--font-body);opacity:.85}
+.drop:not(:disabled):active{transform:translateY(7px);box-shadow:0 2px 0 var(--accent-deep)}
+.drop.done{background:var(--surface2);color:var(--accent);box-shadow:0 9px 0 var(--line)}
+.drop.locked{background:var(--surface2);color:var(--muted);box-shadow:0 9px 0 var(--line)}
+.meta{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+
+/* 斷火警示 */
+.crisis{border:2px solid var(--flame);border-radius:14px;padding:16px;background:var(--surface);display:flex;flex-direction:column;gap:10px}
+.crisis h3{color:var(--flame)}
+.crisis p{margin:0;font-size:14px}
+
+/* 通用元件 */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 16px}
+.card.pad{padding:16px}
+.btn{min-height:46px;padding:0 18px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:15px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.dng{border-color:var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.5}
+.btn.sm{min-height:38px;padding:0 14px;font-size:14px}
+.row-btns{display:flex;flex-wrap:wrap;gap:10px}
+
+/* 任務 */
+.q{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:12px;width:100%;min-height:58px;padding:8px 0;background:none;border:0;border-bottom:1px solid var(--line);text-align:left}
+.q:last-child{border-bottom:0}
+.q .bx{width:26px;height:26px;border-radius:50%;border:2px solid var(--muted);display:grid;place-items:center}
+.q .bx .i{width:16px;height:16px;opacity:0}
+.q.done .bx{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.q.done .bx .i{opacity:1}
+.q.done .tx{color:var(--muted);text-decoration:line-through}
+.q .rw{font-size:12px;color:var(--muted);text-align:right;line-height:1.35;font-variant-numeric:tabular-nums}
+
+/* 寶箱 */
+.chest{display:grid;grid-template-columns:72px 1fr;gap:16px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.chest .ic{width:72px;height:72px;color:var(--muted)}
+.chest.wood .ic{color:#9A6A3A}
+.chest.gold .ic{color:var(--gold)}
+.chest.opened .ic{color:var(--line)}
+.chest .tx{display:flex;flex-direction:column;gap:8px;align-items:flex-start;min-width:0}
+.chest .tx p{margin:0;font-size:14px}
+
+/* 商城 */
+.item{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .nm{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.item .pr{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums}
+.item .pr .i{width:14px;height:14px}
+.item .ac{grid-row:1 / span 2;grid-column:2;display:flex;gap:8px}
+.shieldbox{display:flex;align-items:center;gap:14px}
+.shieldbox .sl{display:flex;gap:6px}
+.shieldbox .sl .i{width:34px;height:34px;color:var(--water)}
+.shieldbox .sl .i.off{color:var(--line)}
+.field{display:flex;flex-wrap:wrap;gap:10px}
+.field input{flex:1 1 140px;min-width:0;min-height:44px;padding:0 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.field input.p{flex:0 1 100px}
+.vc{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.vc:last-child{border-bottom:0}
+.vc.used{color:var(--muted);text-decoration:line-through}
+
+/* 圖鑑 */
+.dex{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dx{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:13px;min-width:0}
+.seal{width:100%;max-width:96px;aspect-ratio:1;display:grid;place-items:center;border:3px solid currentColor;border-radius:6px;font:700 40px/1 var(--font-display);position:relative;background:var(--surface)}
+.seal.c{color:var(--muted)}
+.seal.r{color:var(--water)}
+.seal.l{color:var(--gold);box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--gold)}
+.seal.u{border-style:dashed;color:var(--line);font-size:30px;background:transparent}
+.seal em{position:absolute;right:-8px;bottom:-8px;font:700 12px var(--font-body);font-style:normal;background:var(--ink);color:var(--bg);border-radius:99px;padding:1px 7px}
+.dx .nm{overflow-wrap:anywhere}
+.dx.u .nm{color:var(--muted)}
+.tag{font-size:11px;letter-spacing:.06em;color:var(--muted)}
+
+/* 我 */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.st{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 8px;text-align:center}
+.st b{display:block;font:700 26px/1.1 var(--font-display);font-variant-numeric:tabular-nums}
+.st span{font-size:12px;color:var(--muted)}
+.lv{display:grid;grid-template-columns:46px 1fr;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center}
+.lv.lock .lvb{opacity:.4;filter:grayscale(1)}
+.lv:last-child{border-bottom:0}
+.lv b{font:700 15px var(--font-body);font-variant-numeric:tabular-nums}
+.lv .ti{font:700 17px var(--font-display)}
+.lv small{display:block;color:var(--muted);font-size:12px}
+.lv.cur{background:var(--surface2);margin-inline:-16px;padding-inline:16px}
+.lv.lock{color:var(--muted)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .h{font-size:11px;color:var(--muted);text-align:center}
+.cal .c{aspect-ratio:1;border-radius:5px;background:var(--surface2)}
+.cal .c.k{background:var(--accent)}
+.cal .c.s{background:var(--water)}
+.cal .c.p{background:var(--gold)}
+.cal .c.n{background:transparent}
+.cal .c.t{outline:2px solid var(--ink);outline-offset:1px}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.leg i{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.log{list-style:none;margin:0;padding:0;font-size:14px}
+.log li{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.log li:last-child{border-bottom:0}
+.log time{color:var(--muted);font-size:12px;flex:none;width:44px;font-variant-numeric:tabular-nums;padding-top:2px}
+
+/* 導覽、提示、對話面板 */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+.nav-in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.nb{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:52px;justify-content:center;background:none;border:0;border-radius:10px;font-size:12px;color:var(--muted);font-weight:500}
+.nb .i{width:24px;height:24px}
+.nb[aria-current="page"]{color:var(--accent);font-weight:700}
+#toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);max-width:min(92vw,420px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+.sheet-bg{position:fixed;inset:0;z-index:30;background:rgba(6,16,13,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:520px;max-height:88%;overflow:auto;background:var(--surface);border-radius:22px 22px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;animation:up .25s ease}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheet .sb{display:flex;flex-direction:column;gap:10px;font-size:15px}
+.sheet .sb p{margin:0}
+.sheet .sa{display:flex;flex-direction:column;gap:10px}
+.sheet textarea{width:100%;min-height:120px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:12px/1.4 ui-monospace,Menlo,monospace;padding:10px}
+.rv{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.rv .big{font:700 30px var(--font-display);display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.rv .big .i{width:28px;height:28px}
+.rv .big.g .i{color:var(--gold)}
+.rv .big.x .i{color:var(--accent)}
+.rv .seal{max-width:88px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+/* 登入畫面 */
+.auth{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;justify-content:center;gap:22px;padding-block:32px}
+.auth .brand{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.auth .brand .i{width:56px;height:56px;color:var(--accent)}
+.auth .brand h1{font:700 34px/1.2 var(--font-display);margin:0}
+.auth .brand p{margin:0;color:var(--muted);font-size:14px}
+.auth form{display:flex;flex-direction:column;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 16px}
+.auth label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500}
+.auth input{min-height:48px;padding:0 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:16px var(--font-body);width:100%;min-width:0}
+.auth .msg{font-size:14px;margin:0;padding:10px 12px;border-radius:10px;background:var(--surface2)}
+.auth .msg.err{color:var(--danger);background:transparent;border:1px solid var(--danger)}
+.auth .links{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px}
+.auth .lk{background:none;border:0;color:var(--accent);font-weight:700;font-size:14px;padding:6px 4px;min-height:36px;text-decoration:underline;text-underline-offset:3px}
+.auth .setup{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 16px;font-size:14px;display:flex;flex-direction:column;gap:8px}
+.auth .setup code{font:13px ui-monospace,Menlo,monospace;background:var(--surface2);padding:1px 6px;border-radius:5px}
+.acct{font-size:14px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-flame" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C12 2 5 8.5 5 14a7 7 0 0 0 14 0c0-2.5-1.2-4.6-2.6-6.2-.3 1.6-1.2 2.7-2.4 3C14.3 8.4 13.2 4.6 12 2z"/><path fill="var(--surface)" fill-opacity=".55" d="M12 20.5a3.2 3.2 0 0 1-3.2-3.2c0-1.6 1.4-2.5 2.1-4 .7 1.1 1.5 1.5 2.2 2.6.5.8.7 1.7.7 2.2a3.2 3.2 0 0 1-1.8 2.4z"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5S5.5 10 5.5 14.5a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5z"/></symbol>
+  <symbol id="i-drop-o" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" d="M12 3S5.8 10.2 5.8 14.5a6.2 6.2 0 0 0 12.4 0C18.2 10.2 12 3 12 3z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.5l7.5 3v6c0 4.7-3.1 8.6-7.5 10-4.4-1.4-7.5-5.3-7.5-10v-6z"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><path fill="currentColor" fill-rule="evenodd" d="M12 2.5a9.5 9.5 0 1 0 0 19 9.5 9.5 0 0 0 0-19zm0 4.2a5.3 5.3 0 1 1 0 10.6 5.3 5.3 0 0 1 0-10.6z"/><circle cx="12" cy="12" r="2.2" fill="currentColor"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.5 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l5 5L19 7"/></symbol>
+  <symbol id="i-chest" viewBox="0 0 24 24"><path fill="currentColor" d="M3 11h18v8.2a1.3 1.3 0 0 1-1.3 1.3H4.3A1.3 1.3 0 0 1 3 19.2z"/><path fill="currentColor" fill-opacity=".7" d="M3 10V8.5A4.5 4.5 0 0 1 7.5 4h9A4.5 4.5 0 0 1 21 8.5V10z"/><rect x="10.2" y="9" width="3.6" height="5" rx=".9" fill="var(--surface)"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M5.5 8h13l1 12.5h-15z"/><path d="M9 8V6.6a3 3 0 0 1 6 0V8"/></g></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" stroke-linecap="round"><path d="M5 4h13.5v14.5H7a2 2 0 0 0-2 2z"/><path d="M5 18.5V4"/><path d="M9 8h6"/></g></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c.6-3.6 3.5-5.6 7.2-5.6s6.6 2 7.2 5.6"/></g></symbol>
+  <symbol id="lv-1" viewBox="0 0 24 24"><path d="M12 21v-8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path fill="currentColor" d="M12.5 12.5c-.3-4 2.5-6.800 7-6.800.3 4-2.500 6.800-7 6.800z"/><path fill="currentColor" d="M11.500 15c.2-3-2-5.200-5.500-5.200-.2 3 2 5.200 5.500 5.200z"/></symbol>
+  <symbol id="lv-2" viewBox="0 0 24 24"><path fill="currentColor" d="M4.500 10.500h10.500v7.500a1.800 1.800 0 0 1-1.800 1.800H6.300a1.800 1.800 0 0 1-1.800-1.800z"/><path d="M15 13.500l5-4.500M4.500 11.500C1.500 11.500 1.500 17 4.500 17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="21" cy="13" r="1.100" fill="currentColor"/><circle cx="19.500" cy="17" r="1.100" fill="currentColor"/></symbol>
+  <symbol id="lv-3" viewBox="0 0 24 24"><path fill="currentColor" d="M4 20l1.200-4.600L16 4.600a1.600 1.600 0 0 1 2.300 0l1.100 1.100a1.600 1.600 0 0 1 0 2.300L8.600 18.800z"/></symbol>
+  <symbol id="lv-4" viewBox="0 0 24 24"><path fill="currentColor" d="M12 6.500C10 5 7 4.500 4 5v12.500c3-.5 6 0 8 1.500 2-1.500 5-2 8-1.500V5c-3-.5-6 0-8 1.500z"/><path d="M12 7v11.500" stroke="var(--surface)" stroke-opacity=".7" stroke-width="1.300" fill="none"/></symbol>
+  <symbol id="lv-5" viewBox="0 0 24 24"><path fill="currentColor" d="M20.500 3.500C12 3.500 6.500 8.500 6.500 15.500L4 20.500l1 .5 3-3.500c.9.2 1.900.3 3 .1 6.500-1 9.500-6.600 9.500-14z"/></symbol>
+  <symbol id="lv-6" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.900"/><path fill="currentColor" d="M15.800 8.200l-2.200 5.400-5.400 2.200 2.200-5.400z"/></symbol>
+  <symbol id="lv-7" viewBox="0 0 24 24"><path fill="currentColor" d="M2 20.500l7-11.500 4.500 7 2.500-3.500 6 8z"/><path d="M9 9V3.500" stroke="currentColor" stroke-width="1.700" stroke-linecap="round" fill="none"/><path fill="currentColor" d="M9 3.500h5l-1.500 1.800L14 7H9z"/></symbol>
+  <symbol id="lv-8" viewBox="0 0 24 24"><path fill="currentColor" d="M4 5.500A1.500 1.500 0 0 1 5.500 4h13A1.500 1.500 0 0 1 20 5.500v9a1.500 1.500 0 0 1-1.500 1.500H11l-4.500 4v-4h-1A1.500 1.500 0 0 1 4 14.500z"/><circle cx="8.500" cy="10" r="1.200" fill="var(--surface)"/><circle cx="12" cy="10" r="1.200" fill="var(--surface)"/><circle cx="15.500" cy="10" r="1.200" fill="var(--surface)"/></symbol>
+  <symbol id="lv-9" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5.200" fill="currentColor"/><ellipse cx="12" cy="12" rx="10" ry="3.600" transform="rotate(-20 12 12)" fill="none" stroke="currentColor" stroke-width="1.700"/></symbol>
+  <symbol id="lv-10" viewBox="0 0 24 24"><path fill="currentColor" d="M3 8.500l4.500 4L12 5l4.500 7.500 4.500-4L19.500 19h-15z"/><circle cx="3" cy="8" r="1.500" fill="currentColor"/><circle cx="12" cy="4.500" r="1.500" fill="currentColor"/><circle cx="21" cy="8" r="1.500" fill="currentColor"/></symbol>
+</svg>
+
+<div class="wrap" id="app"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="config.js"></script>
+<script src="supabase.js"></script>
+<script>
+(function(){
+/* LOGIC:START */
+var MAX_SHIELDS=2, SHIELD_PRICE=50, REFILL_DAYS=30, REFILL_LEVEL=5;
+var MILESTONES={7:{coin:30,xp:30},14:{coin:50,xp:50},30:{coin:100,xp:100},60:{coin:150,xp:150},100:{coin:300,xp:300},200:{coin:500,xp:400},365:{coin:1000,xp:600}};
+var TITLES=['新芽','澆水人','草稿匠','連載者','常駐作者','架構師','長跑者','說書人','造世者','傳說創作者'];
+var PERKS=[{lv:3,text:'每日打卡多 2 Coin'},{lv:5,text:'護符每 30 天自動補滿至 2 個'},{lv:7,text:'寶箱 Coin 多 25%'}];
+var QUEST_POOL=['輸入今天的一行廢文','打開專案資料夾看一眼','隨手截一張靈感圖','記下一個角色或功能的名字','改掉一個錯字或一個爛命名','把一個檔案丟進正確的資料夾','用一句話寫下你現在卡在哪','讀一小段昨天寫的東西','列出三個接下來能做的小事','替某個檔案取一個好名字','存一個參考連結或圖片','打開專案，對它說一聲「我還在」','寫下一個「如果……會怎樣？」','清掉桌面或下載區的一個檔案','畫一個醜醜的草圖或流程框','抄下一句你喜歡的句子','幫明天的自己留一句提示','把腦中的一個點子講成語音備忘'];
+var DEX=[
+{id:'d01',name:'墨滴',seal:'墨',r:'c'},{id:'d02',name:'廢稿',seal:'稿',r:'c'},{id:'d03',name:'鉛筆頭',seal:'鉛',r:'c'},{id:'d04',name:'便條紙',seal:'條',r:'c'},
+{id:'d05',name:'咖啡漬',seal:'漬',r:'c'},{id:'d06',name:'橡皮屑',seal:'屑',r:'c'},{id:'d07',name:'書籤',seal:'籤',r:'c'},{id:'d08',name:'空白頁',seal:'白',r:'c'},
+{id:'d09',name:'紙飛機',seal:'機',r:'c'},{id:'d10',name:'小雨滴',seal:'雨',r:'c'},{id:'d11',name:'嫩芽',seal:'芽',r:'c'},{id:'d12',name:'茶包',seal:'茶',r:'c'},
+{id:'d13',name:'銀筆尖',seal:'銀',r:'r'},{id:'d14',name:'燈下夜稿',seal:'燈',r:'r'},{id:'d15',name:'舊地圖',seal:'圖',r:'r'},{id:'d16',name:'迷你星圖',seal:'星',r:'r'},
+{id:'d17',name:'玻璃墨水瓶',seal:'瓶',r:'r'},{id:'d18',name:'雨夜靈感',seal:'感',r:'r'},{id:'d19',name:'手抄本',seal:'抄',r:'r'},{id:'d20',name:'銅鑰匙',seal:'鑰',r:'r'},
+{id:'d21',name:'金羽毛筆',seal:'羽',r:'l'},{id:'d22',name:'無盡書卷',seal:'卷',r:'l'},{id:'d23',name:'世界樹',seal:'樹',r:'l'},{id:'d24',name:'完稿之印',seal:'印',r:'l'}];
+var RARITY={c:'常見',r:'稀有',l:'傳說'};
+var SHOP=[{id:'s1',name:'手搖飲料權',price:150},{id:'s2',name:'甜點權',price:100},{id:'s3',name:'遊戲或追劇一小時',price:60},{id:'s4',name:'放縱假卡',price:300,kind:'pass'},{id:'s5',name:'買一本想要的書',price:250}];
+
+function pad(n){return String(n).padStart(2,'0')}
+function dstr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function parseD(s){var a=s.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])}
+function diffDays(a,b){var A=parseD(a),B=parseD(b);return Math.round((Date.UTC(B.getFullYear(),B.getMonth(),B.getDate())-Date.UTC(A.getFullYear(),A.getMonth(),A.getDate()))/864e5)}
+function addDays(s,n){var d=parseD(s);d.setDate(d.getDate()+n);return dstr(d)}
+function cumXp(L){return 50*(L-1)*L/2}
+function levelInfo(xp){var L=1;while(xp>=cumXp(L+1))L++;return {level:L,cur:xp-cumXp(L),need:cumXp(L+1)-cumXp(L)}}
+function titleOf(l){return TITLES[Math.min(l,TITLES.length)-1]}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+
+function newState(){return {v:1,updatedAt:0,xp:0,coin:0,streak:0,best:0,total:0,questTotal:0,chestsOpened:0,
+  lastCovered:null,checked:{},shields:MAX_SHIELDS,refillAt:null,
+  quests:{date:null,ids:[],done:[],chest:null,chestInfo:null},dex:{},vouchers:[],shop:[],log:[],passes:0}}
+function migrate(o){var b=newState();if(!o||typeof o!=='object')return b;
+  Object.keys(b).forEach(function(k){if(o[k]!==undefined&&o[k]!==null)b[k]=o[k]});
+  b.quests=Object.assign({date:null,ids:[],done:[],chest:null,chestInfo:null},b.quests);return b}
+function pushLog(s,d,text){s.log.unshift({d:d,t:text});if(s.log.length>40)s.log.length=40}
+
+function hash(str){var h=2166136261;for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function pickQuests(day){var r=mulberry32(hash(day)),p=QUEST_POOL.map(function(_,i){return i});
+  for(var i=p.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=p[i];p[i]=p[j];p[j]=t}return p.slice(0,3)}
+function ensureDay(s,today){if(s.quests.date!==today)s.quests={date:today,ids:pickQuests(today),done:[],chest:null,chestInfo:null}}
+
+function missedCount(s,today){return s.lastCovered?Math.max(0,diffDays(s.lastCovered,today)-1):0}
+function rollover(s,today){
+  var notes=[];ensureDay(s,today);
+  if(levelInfo(s.xp).level>=REFILL_LEVEL){
+    if(!s.refillAt)s.refillAt=today;
+    var refilled=false;
+    while(diffDays(s.refillAt,today)>=REFILL_DAYS){s.refillAt=addDays(s.refillAt,REFILL_DAYS);if(s.shields<MAX_SHIELDS){s.shields=MAX_SHIELDS;refilled=true}}
+    if(refilled){notes.push('護符已自動補滿至 '+MAX_SHIELDS+' 個');pushLog(s,today,'護符自動充能')}
+  }
+  var n=missedCount(s,today);
+  if(n>0&&s.shields>=n){
+    for(var i=1;i<=n;i++)s.checked[addDays(s.lastCovered,i)]='s';
+    s.shields-=n;s.lastCovered=addDays(s.lastCovered,n);
+    notes.push('有 '+n+' 天沒打卡，已自動用掉 '+n+' 個護符，連勝保住了');pushLog(s,today,'自動消耗 '+n+' 個護符');
+  }
+  return notes;
+}
+function crisisInfo(s,today){var n=missedCount(s,today);if(n<=0)return null;
+  var buy=n-s.shields,cost=buy*SHIELD_PRICE;return {n:n,have:s.shields,buy:buy,cost:cost,afford:s.coin>=cost}}
+function rescue(s,today){var c=crisisInfo(s,today);if(!c||!c.afford)return false;
+  for(var i=1;i<=c.n;i++)s.checked[addDays(s.lastCovered,i)]='s';
+  s.coin-=c.cost;s.shields=0;s.lastCovered=addDays(s.lastCovered,c.n);
+  pushLog(s,today,'花 '+c.cost+' Coin 補了 '+c.buy+' 個緊急護符，保住連勝');return true}
+function breakStreak(s,today){var old=s.streak;s.streak=0;s.lastCovered=null;pushLog(s,today,'連勝 '+old+' 天歸零，重新開始');return old}
+
+function checkIn(s,today){
+  if(s.checked[today]==='c')return {error:'done'};
+  if(s.checked[today]==='p')return {error:'pass'};
+  if(missedCount(s,today)>0)return {error:'crisis'};
+  var cont=s.lastCovered&&diffDays(s.lastCovered,today)===1;
+  s.streak=cont?s.streak+1:1;s.best=Math.max(s.best,s.streak);s.total++;
+  s.checked[today]='c';s.lastCovered=today;
+  var lv=levelInfo(s.xp).level,xp=10+Math.min(s.streak,10),coin=5+(lv>=3?2:0),ms=MILESTONES[s.streak]||null;
+  if(ms){xp+=ms.xp;coin+=ms.coin}
+  s.xp+=xp;s.coin+=coin;
+  if(ms)pushLog(s,today,'連勝達 '+s.streak+' 天');
+  return {xp:xp,coin:coin,milestone:ms?s.streak:0,ms:ms};
+}
+function completeQuest(s,idx){
+  if(s.quests.ids.indexOf(idx)<0||s.quests.done.indexOf(idx)>=0)return null;
+  s.quests.done.push(idx);s.xp+=5;s.coin+=2;s.questTotal++;return {xp:5,coin:2};
+}
+function chestTier(s){if(s.quests.chest)return 'opened';var d=s.quests.done.length;return d>=3?'gold':d>=1?'wood':'locked'}
+function wpick(items,w,rng){var t=w.reduce(function(a,b){return a+b},0),r=rng()*t;for(var i=0;i<items.length;i++){r-=w[i];if(r<0)return items[i]}return items[items.length-1]}
+function openChest(s,rng){
+  var tier=chestTier(s);if(tier==='opened'||tier==='locked')return null;
+  var gold=tier==='gold',lv=levelInfo(s.xp).level;
+  var coin=gold?15+Math.floor(rng()*26):5+Math.floor(rng()*16);
+  if(lv>=7)coin=Math.floor(coin*1.25);
+  var xp=gold?15+Math.floor(rng()*16):5+Math.floor(rng()*11);
+  var drop=null,dup=false,refund=0;
+  if(rng()<(gold?0.6:0.25)){
+    var rar=wpick(['c','r','l'],gold?[55,35,10]:[80,18,2],rng);
+    var pool=DEX.filter(function(d){return d.r===rar});
+    drop=pool[Math.floor(rng()*pool.length)];
+    dup=(s.dex[drop.id]||0)>0;s.dex[drop.id]=(s.dex[drop.id]||0)+1;
+    if(dup){refund={c:2,r:5,l:15}[drop.r];coin+=refund}
+  }
+  s.xp+=xp;s.coin+=coin;s.chestsOpened++;
+  s.quests.chest=tier;s.quests.chestInfo={coin:coin,xp:xp,drop:drop?drop.id:null,dup:dup,refund:refund};
+  return {tier:tier,coin:coin,xp:xp,drop:drop,dup:dup,refund:refund};
+}
+function buyShield(s,today){if(s.shields>=MAX_SHIELDS)return 'full';if(s.coin<SHIELD_PRICE)return 'poor';
+  s.coin-=SHIELD_PRICE;s.shields++;pushLog(s,today,'買了 1 個護符');return 'ok'}
+function allShop(s){return SHOP.concat(s.shop)}
+function buyItem(s,id,today){var it=allShop(s).filter(function(x){return x.id===id})[0];if(!it)return 'none';
+  if(s.coin<it.price)return 'poor';s.coin-=it.price;
+  if(it.kind==='pass'){s.passes=(s.passes||0)+1;pushLog(s,today,'兌換 1 張放縱假卡 −'+it.price+' Coin');return 'ok'}
+  s.vouchers.unshift({id:uid(),name:it.name,at:today,used:false});
+  pushLog(s,today,'兌換「'+it.name+'」−'+it.price+' Coin');return 'ok'}
+function useVoucher(s,id,today){var v=s.vouchers.filter(function(x){return x.id===id})[0];if(!v||v.used)return false;
+  v.used=true;v.usedAt=today;pushLog(s,today,'使用「'+v.name+'」');return true}
+function usePass(s,today){
+  if(!(s.passes>0))return 'none';if(s.checked[today])return 'done';if(missedCount(s,today)>0)return 'crisis';
+  s.passes--;s.checked[today]='p';s.lastCovered=today;pushLog(s,today,'使用放縱假卡，今天休息');return 'ok'}
+function addCustom(s,name,price){name=String(name||'').trim().slice(0,24);price=Math.floor(Number(price));
+  if(!name||!(price>=1&&price<=9999))return false;s.shop.push({id:'c'+uid(),name:name,price:price,custom:true});return true}
+function prune(s,today){Object.keys(s.checked).forEach(function(k){if(diffDays(k,today)>400)delete s.checked[k]})}
+/* LOGIC:END */
+
+var KEY='ririshuishui.v1';
+var CFG=window.APP_CONFIG||{};
+var sb=null,uid=null,userEmail='',recovery=/type=recovery/.test(location.hash);
+var S=null,tab='today',fx={},syncState='local',dirty=false,writing=false,timer=0,retryT=0,lastDay='';
+var $app=document.getElementById('app'),$toast=document.getElementById('toast');
+
+function today(){return dstr(new Date())}
+function esc(t){return String(t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function ico(n,c){return '<svg class="i'+(c?' '+c:'')+'" aria-hidden="true"><use href="#i-'+n+'"/></svg>'}
+function lkey(){return KEY+'.'+uid}
+function loadLocal(){try{var t=localStorage.getItem(lkey());if(t)return migrate(JSON.parse(t))}catch(e){}return null}
+function saveLocal(){try{localStorage.setItem(lkey(),JSON.stringify(S))}catch(e){}}
+function commit(){S.updatedAt=Date.now();prune(S,today());saveLocal();dirty=true;clearTimeout(timer);timer=setTimeout(flush,600)}
+function flush(){
+  if(writing||!sb||!uid||!S||!dirty)return;
+  writing=true;dirty=false;clearTimeout(retryT);
+  var snap=S,me=uid;
+  sb.from('saves').upsert({user_id:me,payload:snap,updated_at:new Date().toISOString()}).then(function(r){
+    writing=false;
+    if(r&&r.error){syncState='error';dirty=true;retryT=setTimeout(flush,15000)}
+    else{syncState='cloud';if(dirty)flush()}
+    if(tab==='me'&&S)render();
+  },function(){writing=false;syncState='error';dirty=true;retryT=setTimeout(flush,15000);if(tab==='me'&&S)render()});
+}
+function pullRemote(){
+  if(!sb||!uid||writing||dirty)return;
+  var me=uid;
+  sb.from('saves').select('payload').eq('user_id',me).maybeSingle().then(function(r){
+    if(me!==uid||!S)return;
+    if(r.error){syncState='error';if(tab==='me')render();return}
+    syncState='cloud';
+    var rem=r.data&&r.data.payload?migrate(r.data.payload):null;
+    if(rem&&(rem.updatedAt||0)>(S.updatedAt||0)){if(dirty||writing)return;S=rem;saveLocal();boot();return}
+    if((!rem&&S.updatedAt)||(rem&&(rem.updatedAt||0)<(S.updatedAt||0))){dirty=true;flush()}
+    if(tab==='me')render();
+  },function(){syncState='error'});
+}
+
+var toastT=0;
+function toast(msg){$toast.textContent=msg;$toast.classList.add('on');clearTimeout(toastT);toastT=setTimeout(function(){$toast.classList.remove('on')},2400)}
+var sheetEl=null;
+function closeSheet(){if(sheetEl){sheetEl.remove();sheetEl=null}}
+function sheet(o){
+  closeSheet();var el=document.createElement('div');el.className='sheet-bg';
+  el.innerHTML='<div class="sheet" role="dialog" aria-modal="true" aria-label="'+esc(o.title)+'"><h3>'+esc(o.title)+'</h3><div class="sb">'+o.body+'</div><div class="sa">'+
+    o.actions.map(function(a,i){return '<button class="btn '+(a.kind||'')+'" data-i="'+i+'"'+(a.off?' disabled':'')+'>'+esc(a.label)+'</button>'}).join('')+'</div></div>';
+  el.addEventListener('click',function(e){
+    if(e.target===el){closeSheet();return}
+    var b=e.target.closest('button[data-i]');if(!b)return;
+    var a=o.actions[+b.getAttribute('data-i')];
+    if(!a.run){closeSheet();return}
+    var keep=a.run(el)===false;
+    if(!keep&&sheetEl===el)closeSheet();
+  });
+  document.body.appendChild(el);sheetEl=el;
+  var f=el.querySelector('button.pri')||el.querySelector('button');if(f)f.focus();
+}
+function confirmSheet(title,text,label,run,kind){sheet({title:title,body:'<p>'+text+'</p>',actions:[{label:label,kind:kind||'pri',run:run},{label:'先不要'}]})}
+
+function lvBadge(L,size){
+  var tier=L<=2?1:L<=4?2:L<=6?3:L<=8?4:5;
+  return '<span class="lvb t'+tier+' '+(size||'')+'" aria-hidden="true"><svg class="i"><use href="#lv-'+Math.min(L,10)+'"/></svg></span>';
+}
+function sealHTML(d,owned,count){
+  if(!owned)return '<div class="seal u" aria-hidden="true">？</div>';
+  return '<div class="seal '+d.r+'" aria-hidden="true">'+d.seal+(count>1?'<em>×'+count+'</em>':'')+'</div>';
+}
+
+/* ---------- 畫面 ---------- */
+function headerHTML(){
+  var li=levelInfo(S.xp),pct=Math.min(100,Math.round(li.cur/li.need*100));
+  return '<header class="hd"><div class="hd-row"><button class="lvpill" data-act="tab" data-tab="me" aria-label="等級與成就">'+lvBadge(li.level,'sm')+'Lv '+li.level+'<span>'+titleOf(li.level)+'</span></button>'+
+    '<div class="chips"><span class="chip coin" aria-label="Coin">'+ico('coin')+S.coin.toLocaleString()+'</span><span class="chip sh" aria-label="護符">'+ico('shield')+S.shields+'/'+MAX_SHIELDS+'</span></div></div>'+
+    '<div class="xp" role="progressbar" aria-label="經驗值" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div>'+
+    '<div class="xp-l"><span>'+li.cur+' / '+li.need+' XP</span><span>下一級 Lv '+(li.level+1)+'</span></div></header>';
+}
+function weekHTML(t){
+  var out='';for(var i=6;i>=0;i--){var d=addDays(t,-i),st=S.checked[d]||'',w='日一二三四五六'[parseD(d).getDay()];
+    var cls=(st==='c'?'c':st==='s'?'s':st==='p'?'p':'')+(i===0?' t':'');
+    out+='<div class="wd '+cls+'"><div class="dot">'+(st==='c'?ico('flame'):st==='s'?ico('shield'):st==='p'?'休':'')+'</div>'+w+'</div>';}
+  return '<div class="week" aria-label="最近七天">'+out+'</div>';
+}
+function crisisHTML(c){
+  var t='<section class="crisis" aria-live="polite"><h3>火快熄了</h3><p>你有 '+c.n+' 天沒打卡，背包裡只剩 '+c.have+' 個護符，不夠補。';
+  t+=c.buy>0?'要保住連勝，得用 '+c.cost+' Coin 補買 '+c.buy+' 個緊急護符（你目前有 '+S.coin+' Coin）。':'';
+  t+='</p><div class="row-btns"><button class="btn pri" data-act="rescue"'+(c.afford?'':' disabled')+'>'+(c.afford?'花 '+c.cost+' Coin 保住連勝':'Coin 不夠，還差 '+(c.cost-S.coin))+'</button><button class="btn dng" data-act="break">讓連勝歸零</button></div></section>';
+  return t;
+}
+function todayHTML(){
+  var t=today(),done=S.checked[t]==='c',rest=S.checked[t]==='p',fin=done||rest,c=crisisInfo(S,t),q=S.quests,tier=chestTier(S),dn=q.done.length;
+  var h='';
+  if(c)h+=crisisHTML(c);
+  h+='<section class="hero"><div class="streak '+(S.streak?'':'cold')+' '+(fx.streak?'pop':'')+'">'+ico('flame')+'<b>'+S.streak+'</b><span>天連續</span></div>'+
+     '<div class="meta">最長 '+S.best+' 天　累計 '+S.total+' 天</div>'+weekHTML(t)+
+     '<button class="drop '+(fin?'done':c?'locked':'')+'" data-act="checkin"'+(fin?' disabled':'')+' aria-label="'+(done?'今天已澆水':rest?'今天放縱假中':'今日打卡')+'">'+
+     (done?ico('check')+'今天澆過了':rest?ico('drop')+'放縱假中':ico('drop')+'澆一次水')+'<small>'+(done?'明天見':rest?'好好休息，火不會熄':c?'先處理上方的斷火':'今天有碰到創作就算')+'</small></button>'+
+     ((S.passes>0&&!fin&&!c)?'<button class="btn sm" data-act="usepass">使用放縱假卡（持有 '+S.passes+' 張）</button>':'')+'</section>';
+  h+='<section><div class="sec-h"><h2>今日任務</h2><span class="sub">'+dn+' / 3 完成</span></div><div class="card" style="margin-top:10px">'+
+     q.ids.map(function(idx){var d=q.done.indexOf(idx)>=0;
+       return '<button class="q '+(d?'done':'')+'" data-act="quest" data-i="'+idx+'"'+(d?' disabled':'')+'><span class="bx">'+ico('check')+'</span><span class="tx">'+esc(QUEST_POOL[idx])+'</span><span class="rw">+5 XP<br>+2 Coin</span></button>'}).join('')+'</div></section>';
+  var ct,cb='';
+  if(tier==='opened'){var ci=q.chestInfo||{},dd=ci.drop?DEX.filter(function(x){return x.id===ci.drop})[0]:null;
+    ct='今天的寶箱開過了：+'+(ci.coin||0)+' Coin、+'+(ci.xp||0)+' XP'+(dd?'，得到「'+dd.name+'」':'')+'。明天會有新的。'}
+  else if(tier==='locked'){ct='完成 1 個任務就能開木寶箱，全部完成會升級成金寶箱。'}
+  else if(tier==='wood'){ct='木寶箱可以開了。再完成 '+(3-dn)+' 個任務會升級成金寶箱，掉落更好。';cb='<button class="btn pri" data-act="chest">現在開木寶箱</button>'}
+  else{ct='金寶箱可以開了，Coin、XP 和收藏掉落率都更高。';cb='<button class="btn pri" data-act="chest">開金寶箱</button>'}
+  h+='<section class="chest '+tier+'">'+ico('chest','ic')+'<div class="tx"><h3>'+(tier==='gold'?'金寶箱':tier==='opened'?'寶箱':'木寶箱')+'</h3><p>'+ct+'</p>'+cb+'</div></section>';
+  return h;
+}
+function shopHTML(){
+  var t=today(),lv=levelInfo(S.xp).level,sl='';
+  for(var i=0;i<MAX_SHIELDS;i++)sl+=ico('shield',i<S.shields?'':'off');
+  var next='';
+  if(lv>=REFILL_LEVEL&&S.refillAt){var left=Math.max(0,REFILL_DAYS-diffDays(S.refillAt,t));next='下次自動充能在 '+left+' 天後（補滿至 '+MAX_SHIELDS+' 個，用完才會補）'}
+  else next='Lv '+REFILL_LEVEL+' 解鎖每 30 天自動補滿至 '+MAX_SHIELDS+' 個';
+  var h='<section><h2>護符</h2><div class="card pad" style="margin-top:10px;display:flex;flex-direction:column;gap:12px">'+
+    '<div class="shieldbox"><div class="sl" aria-label="背包 '+S.shields+' / '+MAX_SHIELDS+'">'+sl+'</div><div><b>背包 '+S.shields+' / '+MAX_SHIELDS+'</b><p class="sub">忘記打卡的那天，系統會自動用掉一個。</p></div></div>'+
+    '<p class="sub">'+next+'</p><div class="row-btns"><button class="btn pri sm" data-act="buyshield"'+(S.shields>=MAX_SHIELDS||S.coin<SHIELD_PRICE?' disabled':'')+'>'+
+    (S.shields>=MAX_SHIELDS?'背包已滿':S.coin<SHIELD_PRICE?'還差 '+(SHIELD_PRICE-S.coin)+' Coin':'買 1 個護符　'+SHIELD_PRICE+' Coin')+'</button></div></div></section>';
+  var pc=crisisInfo(S,t),pl=S.passes<1?'還沒有卡':S.checked[t]==='p'?'今天已使用':S.checked[t]==='c'?'今天已打卡':pc?'先處理斷火':'今天使用';
+  h+='<section><div class="sec-h"><h2>放縱假卡</h2><span class="sub">持有 '+S.passes+' 張</span></div><div class="card pad" style="margin-top:10px;display:flex;flex-direction:column;gap:12px"><p class="sub" style="margin:0">用掉一張，當天不用打卡，連勝不會斷，也不會加一天。想放縱的那天再用，卡片在下方商城兌換。</p><div class="row-btns"><button class="btn pri sm" data-act="usepass"'+(S.passes>0&&!S.checked[t]&&!pc?'':' disabled')+'>'+pl+'</button></div></div></section>';
+  h+='<section><div class="sec-h"><h2>獎勵商城</h2><span class="sub">現實中的犒賞</span></div><div class="card" style="margin-top:10px">'+
+    allShop(S).map(function(it){var ok=S.coin>=it.price;
+      return '<div class="item"><div class="nm">'+esc(it.name)+'</div><div class="pr">'+ico('coin')+it.price+'</div><div class="ac">'+
+        (it.custom?'<button class="btn sm" data-act="delcustom" data-id="'+it.id+'" aria-label="刪除 '+esc(it.name)+'">刪除</button>':'')+
+        '<button class="btn sm pri" data-act="buyitem" data-id="'+it.id+'"'+(ok?'':' disabled')+'>'+(ok?'兌換':'差 '+(it.price-S.coin))+'</button></div></div>'}).join('')+'</div></section>';
+  h+='<section><h2>新增自己的獎勵</h2><div class="card pad" style="margin-top:10px"><div class="field"><input id="cn" maxlength="24" placeholder="獎勵名稱，例如：一杯拿鐵" aria-label="獎勵名稱"><input id="cp" class="p" type="number" inputmode="numeric" min="1" max="9999" placeholder="Coin" aria-label="價格"><button class="btn pri sm" data-act="addcustom">新增</button></div></div></section>';
+  var vs=S.vouchers.slice(0,20);
+  h+='<section><div class="sec-h"><h2>我的兌換券</h2><span class="sub">'+S.vouchers.filter(function(v){return !v.used}).length+' 張可用</span></div><div class="card" style="margin-top:10px">'+
+    (vs.length?vs.map(function(v){return '<div class="vc '+(v.used?'used':'')+'"><span>'+esc(v.name)+' <span class="sub">'+v.at.slice(5).replace('-','/')+'</span></span>'+
+      (v.used?'<span class="sub">已使用</span>':'<button class="btn sm" data-act="usevc" data-id="'+v.id+'">使用</button>')+'</div>'}).join('')
+      :'<p class="sub" style="padding:12px 0;margin:0">還沒有兌換券。存夠 Coin 再決定要犒賞自己什麼。</p>')+'</div></section>';
+  return h;
+}
+function dexHTML(){
+  var got=DEX.filter(function(d){return S.dex[d.id]>0}).length;
+  var h='<section><div class="sec-h"><h2>圖鑑</h2><span class="sub">'+got+' / '+DEX.length+' 已收集</span></div><p class="sub" style="margin-top:4px">只能從每日寶箱掉落。重複拿到會換成 Coin。</p></section>';
+  ['c','r','l'].forEach(function(r){
+    var list=DEX.filter(function(d){return d.r===r});
+    h+='<section><div class="sec-h"><h3>'+RARITY[r]+'</h3><span class="sub">'+list.filter(function(d){return S.dex[d.id]>0}).length+' / '+list.length+'</span></div><div class="dex" style="margin-top:12px">'+
+      list.map(function(d){var n=S.dex[d.id]||0;return '<div class="dx '+(n?'':'u')+'">'+sealHTML(d,n>0,n)+'<span class="nm">'+(n?d.name:'尚未發現')+'</span></div>'}).join('')+'</div></section>';
+  });
+  return h;
+}
+function calHTML(t){
+  var dow=parseD(t).getDay(),start=addDays(t,-(dow+28)),h='';
+  '日一二三四五六'.split('').forEach(function(w){h+='<div class="h">'+w+'</div>'});
+  for(var i=0;i<35;i++){var d=addDays(start,i),fut=diffDays(t,d)>0,st=S.checked[d];
+    h+='<div class="c '+(fut?'n':st==='c'?'k':st==='s'?'s':st==='p'?'p':'')+(d===t?' t':'')+'" title="'+d+'"></div>'}
+  return '<div class="cal" role="img" aria-label="最近五週打卡紀錄">'+h+'</div>';
+}
+function meHTML(){
+  var t=today(),li=levelInfo(S.xp),lv=li.level,rows='',max=Math.max(10,lv+1);
+  for(var L=1;L<=Math.min(max,12);L++){
+    var perk=PERKS.filter(function(p){return p.lv===L})[0];
+    rows+='<div class="lv '+(L===lv?'cur':L>lv?'lock':'')+'">'+lvBadge(L,'md')+'<div><span class="ti">'+titleOf(L)+'</span><small>Lv '+L+'　'+cumXp(L)+' XP 起'+(perk?'　解鎖：'+perk.text:'')+'</small></div></div>';
+  }
+  var syncTxt=syncState==='cloud'?'已同步到雲端，換裝置登入同一個帳號就能接續。':syncState==='error'?'雲端同步失敗，變更先存在這台裝置，恢復連線後會自動重試。':'正在連線雲端…';
+  var h='<section class="mehero">'+lvBadge(lv,'lg')+'<div><h2>Lv '+lv+'　'+titleOf(lv)+'</h2><p class="sub">還差 '+(li.need-li.cur)+' XP 升到 Lv '+(lv+1)+'</p></div></section><section><h2>統計</h2><div class="stats" style="margin-top:10px"><div class="st"><b>'+S.total+'</b><span>累計打卡</span></div><div class="st"><b>'+S.best+'</b><span>最長連勝</span></div><div class="st"><b>'+S.questTotal+'</b><span>完成任務</span></div>'+
+    '<div class="st"><b>'+S.chestsOpened+'</b><span>開過寶箱</span></div><div class="st"><b>'+DEX.filter(function(d){return S.dex[d.id]>0}).length+'</b><span>圖鑑收集</span></div><div class="st"><b>'+S.xp+'</b><span>總 XP</span></div></div></section>';
+  h+='<section><h2>最近五週</h2><div class="card pad" style="margin-top:10px;display:flex;flex-direction:column;gap:12px">'+calHTML(t)+'<div class="leg"><span><i style="background:var(--accent)"></i>有打卡</span><span><i style="background:var(--water)"></i>護符保住</span><span><i style="background:var(--gold)"></i>放縱假</span><span><i style="background:var(--surface2)"></i>沒打卡</span></div></div></section>';
+  h+='<section><h2>等級與稱號</h2><div class="card" style="margin-top:10px">'+rows+'</div></section>';
+  h+='<section><h2>最近紀錄</h2><div class="card" style="margin-top:10px">'+(S.log.length?'<ul class="log">'+S.log.slice(0,8).map(function(e){return '<li><time>'+e.d.slice(5).replace('-','/')+'</time><span>'+esc(e.t)+'</span></li>'}).join('')+'</ul>':'<p class="sub" style="padding:12px 0;margin:0">還沒有紀錄。</p>')+'</div></section>';
+  h+='<section><h2>帳號</h2><div class="card pad" style="margin-top:10px;display:flex;flex-direction:column;gap:12px"><div class="acct">'+esc(userEmail)+'</div><div class="row-btns"><button class="btn sm" data-act="chpw">改密碼</button><button class="btn sm dng" data-act="logout">登出</button></div></div></section>';
+  h+='<section><h2>資料</h2><div class="card pad" style="margin-top:10px;display:flex;flex-direction:column;gap:12px"><p class="sub" style="margin:0">'+syncTxt+'</p><div class="row-btns"><button class="btn sm" data-act="export">備份</button><button class="btn sm" data-act="import">還原</button><button class="btn sm dng" data-act="reset">全部重來</button></div></div></section>';
+  return h;
+}
+function navHTML(){
+  var tabs=[['today','今日','drop-o'],['shop','商城','bag'],['dex','圖鑑','book'],['me','我','user']];
+  return '<nav aria-label="主選單"><div class="nav-in">'+tabs.map(function(x){return '<button class="nb" data-act="tab" data-tab="'+x[0]+'"'+(tab===x[0]?' aria-current="page"':'')+'>'+ico(x[2])+x[1]+'</button>'}).join('')+'</div></nav>';
+}
+function render(){
+  var body=tab==='shop'?shopHTML():tab==='dex'?dexHTML():tab==='me'?meHTML():todayHTML();
+  var old=document.querySelector('nav');if(old)old.remove();
+  $app.innerHTML=headerHTML()+'<main>'+body+'</main>';
+  document.body.appendChild(document.createRange().createContextualFragment(navHTML()));
+  fx={};
+}
+
+/* ---------- 互動 ---------- */
+function levelNow(){return levelInfo(S.xp).level}
+function afterGain(lv0,lines,title){
+  var lv1=levelNow();
+  if(lv1>lv0){
+    var perks=PERKS.filter(function(p){return p.lv===lv1}).map(function(p){return '<p>新福利：'+p.text+'</p>'}).join('');
+    sheet({title:'升級了',body:'<div class="rv"><div class="burst">'+lvBadge(lv1,'lg')+'</div><div class="big x">Lv '+lv1+'</div><p><b>'+titleOf(lv1)+'</b></p></div>'+perks+(lines||''),actions:[{label:'繼續',kind:'pri'}]});
+    return true;
+  }
+  if(lines){sheet({title:title,body:lines,actions:[{label:'繼續',kind:'pri'}]});return true}
+  return false;
+}
+function doCheckin(){
+  var t=today(),lv0=levelNow(),r=checkIn(S,t);
+  if(r.error==='crisis'){toast('先處理斷火，才能打卡');return}
+  if(r.error){return}
+  fx.streak=true;commit();render();
+  var lines='';
+  if(r.milestone)lines='<div class="rv"><div class="big">'+ico('flame')+r.milestone+' 天連勝</div><p>額外獎勵：+'+r.ms.coin+' Coin、+'+r.ms.xp+' XP</p></div>';
+  toast('澆水完成　+'+r.xp+' XP　+'+r.coin+' Coin');
+  afterGain(lv0,lines,'連勝達成');
+}
+function doQuest(idx){
+  var lv0=levelNow(),r=completeQuest(S,idx);if(!r)return;
+  commit();render();toast('任務完成　+'+r.xp+' XP　+'+r.coin+' Coin');afterGain(lv0,'','');
+}
+function doChest(){
+  var lv0=levelNow(),r=openChest(S,Math.random);if(!r)return;
+  commit();render();
+  var body='<div class="rv"><div class="big g">'+ico('coin')+'+'+r.coin+' Coin</div><div class="big x">'+ico('star')+'+'+r.xp+' XP</div>';
+  if(r.drop)body+=sealHTML(r.drop,true,0)+'<p><b>'+r.drop.name+'</b>（'+RARITY[r.drop.r]+'）</p><p class="sub">'+(r.dup?'已經有了，換成 '+r.refund+' Coin（已計入上方）':'新收藏，已加入圖鑑')+'</p>';
+  else body+='<p class="sub">這次沒有掉落收藏品。</p>';
+  body+='</div>';
+  afterGain(lv0,body,r.tier==='gold'?'金寶箱':'木寶箱');
+}
+function doExport(){
+  var json=JSON.stringify(S);
+  sheet({title:'備份',body:'<p>複製下面這串文字存起來。日後要還原時貼回「還原」。</p><textarea id="bk" readonly>'+esc(json)+'</textarea>',
+    actions:[{label:'複製',kind:'pri',run:function(){
+      var ok=function(){toast('已複製')},no=function(){toast('請長按文字手動複製')};
+      try{navigator.clipboard.writeText(json).then(ok,no)}catch(e){no()}}},{label:'關閉'}]});
+  var ta=document.getElementById('bk');if(ta){ta.focus();ta.select()}
+}
+function doImport(){
+  sheet({title:'還原',body:'<p>貼上備份文字。會取代目前所有資料。</p><textarea id="bk" placeholder="貼在這裡"></textarea>',
+    actions:[{label:'還原',kind:'pri',run:function(el){
+      try{var o=JSON.parse(el.querySelector('#bk').value);if(typeof o.xp!=='number'||typeof o.coin!=='number')throw 0;
+        S=migrate(o);rollover(S,today());commit();render();toast('已還原')}
+      catch(e){toast('格式不對，沒有還原');return false}}},{label:'取消'}]});
+}
+function doLogout(){
+  var k=lkey();
+  var go=function(){
+    try{localStorage.removeItem(k)}catch(e){}
+    sb.auth.signOut().then(function(){leaveApp()},function(){leaveApp()});
+  };
+  if(dirty||writing||syncState==='error')confirmSheet('登出','還有變更沒有同步到雲端，現在登出可能會遺失。仍要登出嗎？','仍要登出',go,'dng');
+  else confirmSheet('登出','登出後要重新輸入帳密才能使用。','登出',go);
+}
+function doChangePw(){
+  sheet({title:'改密碼',body:'<label class="sub">新密碼（至少 8 個字）<input id="np" type="password" autocomplete="new-password" style="width:100%;min-height:46px;border-radius:10px;border:1.5px solid var(--line);background:var(--bg);color:var(--ink);font:16px var(--font-body);padding:0 12px;margin-top:6px"></label>',
+    actions:[{label:'更新',kind:'pri',run:function(el){
+      var p=el.querySelector('#np').value;if(p.length<8){toast('密碼至少 8 個字');return false}
+      sb.auth.updateUser({password:p}).then(function(r){toast(r.error?authErr(r.error):'密碼已更新')},function(){toast('連不上伺服器')});
+    }},{label:'取消'}]});
+}
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act]');if(!b||b.disabled)return;
+  var a=b.getAttribute('data-act'),id=b.getAttribute('data-id'),t=today();
+  if(a==='auth-mode')renderAuth(b.getAttribute('data-mode'));
+  else if(!S)return;
+  else if(a==='tab'){tab=b.getAttribute('data-tab');render();window.scrollTo(0,0)}
+  else if(a==='checkin')doCheckin();
+  else if(a==='quest')doQuest(+b.getAttribute('data-i'));
+  else if(a==='chest')doChest();
+  else if(a==='rescue'){var c=crisisInfo(S,t);if(c)confirmSheet('補買緊急護符','花 '+c.cost+' Coin 補買 '+c.buy+' 個護符，加上背包的 '+c.have+' 個，一起用掉。這些 Coin 原本可以拿去兌換獎勵。','確定補救',function(){if(rescue(S,t)){commit();render();toast('連勝保住了')}})}
+  else if(a==='break')confirmSheet('讓連勝歸零','連勝 '+S.streak+' 天會歸零，最長紀錄 '+S.best+' 天會保留，背包裡的護符也不會被用掉。','歸零重來',function(){breakStreak(S,t);commit();render();toast('重新開始，今天就是第一天')},'dng');
+  else if(a==='buyshield'){var r=buyShield(S,t);if(r==='ok'){commit();render();toast('買了 1 個護符')}else toast(r==='full'?'背包已滿':'Coin 不夠')}
+  else if(a==='buyitem'){var it=allShop(S).filter(function(x){return x.id===id})[0];if(it)confirmSheet('兌換獎勵','用 '+it.price+' Coin 兌換「'+esc(it.name)+'」？'+(it.kind==='pass'?'兌換後會得到 1 張放縱假卡，想放縱那天再使用。':'兌換後會放進兌換券，真的享用時再按「使用」。'),'兌換',function(){if(buyItem(S,id,t)==='ok'){commit();render();toast('已兌換，去享受吧')}else toast('Coin 不夠')})}
+  else if(a==='usevc'){var v=S.vouchers.filter(function(x){return x.id===id})[0];if(v)confirmSheet('使用兌換券','現在使用「'+esc(v.name)+'」？','使用',function(){useVoucher(S,id,t);commit();render()})}
+  else if(a==='delcustom'){var it2=S.shop.filter(function(x){return x.id===id})[0];if(it2)confirmSheet('刪除獎勵','刪除「'+esc(it2.name)+'」？已兌換的券不受影響。','刪除',function(){S.shop=S.shop.filter(function(x){return x.id!==id});commit();render()},'dng')}
+  else if(a==='addcustom'){var n=document.getElementById('cn').value,p=document.getElementById('cp').value;
+    if(addCustom(S,n,p)){commit();render();toast('已新增')}else toast('請輸入名稱和 1 到 9999 的價格')}
+  else if(a==='usepass')confirmSheet('使用放縱假卡','今天不用打卡，連勝會保留，但不會加一天。使用後不能撤回。','使用',function(){var r=usePass(S,t);if(r==='ok'){commit();render();toast('今天放假，火不會熄')}else toast('現在不能使用')});
+  else if(a==='logout')doLogout();
+  else if(a==='chpw')doChangePw();
+  else if(a==='export')doExport();
+  else if(a==='import')doImport();
+  else if(a==='reset')confirmSheet('全部重來','連勝、等級、Coin、圖鑑和兌換券都會清空，無法復原。建議先備份。','清空並重來',function(){S=newState();rollover(S,today());commit();render();toast('已重來')},'dng');
+});
+
+/* ---------- 啟動與登入 ---------- */
+function boot(){
+  var t=today();lastDay=t;
+  var notes=rollover(S,t);if(notes.length)commit();
+  render();
+  if(notes.length)toast(notes[0]);
+}
+var authMode='login',authEmail='';
+function setMsg(text,err){
+  var f=document.getElementById('authf');if(!f)return;
+  var m=f.querySelector('.msg');
+  if(!m){m=document.createElement('p');f.insertBefore(m,document.getElementById('au-go'))}
+  m.className='msg'+(err?' err':'');m.setAttribute('role','alert');m.textContent=text;
+}
+function authErr(e){
+  var m=String((e&&e.message)||e);
+  if(/invalid login/i.test(m))return '帳號或密碼錯誤';
+  if(/not confirmed/i.test(m))return '這個 Email 還沒確認，請先點確認信裡的連結';
+  if(/already registered/i.test(m))return '這個 Email 已經註冊過了，請直接登入';
+  if(/rate limit|too many|security purposes/i.test(m))return '操作太頻繁，請等幾分鐘再試';
+  if(/password/i.test(m)&&/(short|least|weak|characters)/i.test(m))return '密碼太簡單或太短，請換一個';
+  if(/network|fetch/i.test(m))return '連不上伺服器，請確認網路';
+  return '發生錯誤：'+m;
+}
+function renderAuth(mode,msg){
+  authMode=mode;var n=document.querySelector('nav');if(n)n.remove();closeSheet();
+  var needCfg=!CFG.SUPABASE_URL||!CFG.SUPABASE_ANON_KEY||!window.supabase;
+  var h='<div class="auth"><div class="brand">'+ico('drop')+'<h1>日日澆水</h1><p>每天為自己澆一次水</p></div>';
+  if(needCfg){
+    h+='<div class="setup"><h3>還沒設定雲端</h3><p style="margin:0">請打開 <code>config.js</code>，填入你的 Supabase 專案網址和 anon 金鑰，再重新整理。詳細步驟在 <code>README.md</code>。</p></div>';
+  }else{
+    var label={login:'登入',signup:'建立帳號',forgot:'寄重設連結',recovery:'更新密碼'}[mode];
+    h+='<form id="authf" novalidate>';
+    if(mode==='recovery')h+='<p class="msg">請設定新的密碼。</p>';
+    if(mode!=='recovery')h+='<label>Email<input id="au-email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" value="'+esc(authEmail)+'"></label>';
+    if(mode!=='forgot')h+='<label>'+(mode==='login'?'密碼':'新密碼（至少 8 個字）')+'<input id="au-pw" type="password" autocomplete="'+(mode==='login'?'current-password':'new-password')+'"></label>';
+    if(mode==='recovery')h+='<label>再輸入一次<input id="au-pw2" type="password" autocomplete="new-password"></label>';
+    if(msg)h+='<p class="msg'+(msg.err?' err':'')+'" role="alert">'+esc(msg.text)+'</p>';
+    h+='<button class="btn pri" type="submit" id="au-go">'+label+'</button></form><div class="links">';
+    if(mode==='login')h+='<button class="lk" data-act="auth-mode" data-mode="signup">建立帳號</button><button class="lk" data-act="auth-mode" data-mode="forgot">忘記密碼</button>';
+    else if(mode!=='recovery')h+='<button class="lk" data-act="auth-mode" data-mode="login">回到登入</button>';
+    h+='</div>';
+  }
+  $app.innerHTML=h+'</div>';
+}
+function val(id){var el=document.getElementById(id);return el?el.value:''}
+function doAuth(){
+  var email=val('au-email').trim(),pw=val('au-pw'),btn=document.getElementById('au-go');
+  authEmail=email;
+  var done=function(){btn.disabled=false};
+  var fail=function(t){done();setMsg(t,true)};
+  var netFail=function(){fail('連不上伺服器，請確認網路')};
+  if(authMode!=='recovery'&&!/^\S+@\S+\.\S+$/.test(email)){setMsg('請輸入正確的 Email',true);return}
+  if(authMode==='login'){
+    if(!pw){setMsg('請輸入密碼',true);return}
+    btn.disabled=true;
+    sb.auth.signInWithPassword({email:email,password:pw}).then(function(r){if(r.error)fail(authErr(r.error));else done()},netFail);
+  }else if(authMode==='signup'){
+    if(pw.length<8){setMsg('密碼至少 8 個字',true);return}
+    btn.disabled=true;
+    sb.auth.signUp({email:email,password:pw,options:{emailRedirectTo:location.origin+location.pathname}}).then(function(r){
+      if(r.error){fail(authErr(r.error));return}
+      var u=r.data&&r.data.user;
+      if(u&&u.identities&&u.identities.length===0){fail('這個 Email 已經註冊過了，請直接登入');return}
+      done();
+      if(!(r.data&&r.data.session))renderAuth('login',{text:'已寄出確認信到 '+email+'。點信裡的連結後，再回來登入。'});
+    },netFail);
+  }else if(authMode==='forgot'){
+    btn.disabled=true;
+    sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname}).then(function(r){
+      if(r.error)fail(authErr(r.error));else{done();setMsg('如果這個 Email 有註冊，重設連結已經寄出。',false)}
+    },netFail);
+  }else if(authMode==='recovery'){
+    var pw2=val('au-pw2');
+    if(pw.length<8){setMsg('密碼至少 8 個字',true);return}
+    if(pw!==pw2){setMsg('兩次輸入的密碼不一樣',true);return}
+    btn.disabled=true;
+    sb.auth.updateUser({password:pw}).then(function(r){
+      if(r.error){fail(authErr(r.error));return}
+      recovery=false;try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+      sb.auth.getSession().then(function(x){var ss=x&&x.data&&x.data.session;if(ss)enterApp(ss.user);else renderAuth('login')});
+    },netFail);
+  }
+}
+document.addEventListener('submit',function(e){if(e.target&&e.target.id==='authf'){e.preventDefault();doAuth()}});
+
+function enterApp(user){
+  if(uid===user.id&&S)return;
+  uid=user.id;userEmail=user.email||'';syncState='local';
+  S=loadLocal()||newState();tab='today';boot();pullRemote();
+}
+function leaveApp(){
+  clearTimeout(timer);clearTimeout(retryT);uid=null;S=null;dirty=false;writing=false;userEmail='';
+  renderAuth('login');
+}
+function startAuth(){
+  if(!CFG.SUPABASE_URL||!CFG.SUPABASE_ANON_KEY||!window.supabase){renderAuth('login');return}
+  sb=window.supabase.createClient(CFG.SUPABASE_URL,CFG.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  sb.auth.onAuthStateChange(function(ev,session){
+    // 依官方建議，不在回呼裡直接呼叫其他 Supabase 請求，延後執行
+    setTimeout(function(){
+      if(ev==='PASSWORD_RECOVERY'){recovery=true;renderAuth('recovery');return}
+      if(ev==='SIGNED_OUT'){leaveApp();return}
+      if(session&&session.user&&!recovery&&(ev==='INITIAL_SESSION'||ev==='SIGNED_IN'))enterApp(session.user);
+      else if(!session&&ev==='INITIAL_SESSION')renderAuth(recovery?'recovery':'login');
+    },0);
+  });
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden||!S)return;
+  var t=today();
+  if(t!==lastDay){lastDay=t;var notes=rollover(S,t);commit();render();if(notes.length)toast(notes[0])}
+  if(dirty)flush();else pullRemote();
+});
+window.addEventListener('online',function(){if(S){if(dirty)flush();else pullRemote()}});
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+  window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
+}
+$app.innerHTML='<div class="auth"><div class="brand">'+ico('drop')+'<h1>日日澆水</h1></div></div>';
+startAuth();
+})();
+</script>
+</body>
+</html>
